@@ -50,7 +50,7 @@ window.CONFIG = {
   KEYWORDS:    'клининг барановичи, уборка квартир барановичи, химчистка мебели барановичи, уборка после ремонта, мойка окон барановичи',
 
   /* ---------- приём заявок ---------- */
-  FORM_ENDPOINT: '',
+  FORM_ENDPOINT: 'https://formspree.io/f/xwloqaja',
   TG_BOT_TOKEN:   '9066084965:AAFG_tg9vqwwmN_N0Rwv6g658iEkPGNxS2Y',
   TG_CHAT_ID:     '1109728757',
 
