@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Страница не найдена — ЧИСТЮЛЯ</title>
+<meta name="robots" content="noindex, follow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css?v=29">
+<style>
+  body{min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#f6fbff,#dceefb);margin:0;padding:24px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#0c4a6e}
+  .box{max-width:520px;text-align:center;background:#fff;border-radius:24px;padding:44px 34px;box-shadow:0 30px 70px -30px rgba(2,132,199,.55);border:1px solid #e2f2fe}
+  .mark{width:64px;height:64px;border-radius:20px;margin:0 auto 20px;display:grid;place-items:center;background:linear-gradient(135deg,#38bdf8,#0284c7);color:#fff;box-shadow:0 14px 30px -12px rgba(2,132,199,.9)}
+  .mark svg{width:36px;height:36px}
+  h1{font-size:26px;margin:0 0 10px;color:#0b3b55}
+  p{margin:0 0 22px;color:#64748b;line-height:1.6}
+  .a{display:inline-block;padding:13px 26px;border-radius:14px;background:#0284c7;color:#fff;text-decoration:none;font-weight:700}
+  .a:hover{background:#0369a1}
+</style>
+</head>
+<body>
+  <div class="box">
+    <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg></div>
+    <h1>Такой страницы нет</h1>
+    <p>Возможно, ссылка устарела или в адресе опечатка. Вернитесь на главную — там услуги, цены и заявка онлайн.</p>
+    <a class="a" href="/">На главную</a>
+  </div>
+  <script>
+    // если пользователь пришёл с внутреннего адреса — возвращаем назад
+    setTimeout(function(){
+      try {
+        if (document.referrer && new URL(document.referrer).host === location.host) history.back();
+      } catch (e) {}
+    }, 4000);
+  </script>
+</body>
+</html>

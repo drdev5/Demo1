@@ -1,0 +1,51 @@
+# ==========================================================
+#  Cloudflare Pages — заголовки ответов
+#  Файл читается автоматически, ничего настраивать не нужно.
+#  Подробности: https://developers.cloudflare.com/pages/configuration/headers/
+# ==========================================================
+
+# --- Базовые заголовки безопасности ---
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), interest-cohort=()
+  X-Frame-Options: SAMEORIGIN
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+
+# --- Кэширование: HTML всегда свежий, статика — на год ---
+/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.svg
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.png
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.jpg
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.ico
+  Cache-Control: public, max-age=31536000, immutable
+
+# --- Страница кабинета и подтверждения не индексируются ---
+/admin.html
+  X-Robots-Tag: noindex, nofollow
+
+/bonus.html
+  X-Robots-Tag: noindex, follow
+
+/dev/*
+  X-Robots-Tag: noindex, nofollow

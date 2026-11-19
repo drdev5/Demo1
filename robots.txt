@@ -1,0 +1,19 @@
+# robots.txt — ЧИСТЮЛЯ
+# Домен укажите свой (см. README → публикация)
+
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /bonus.html
+Disallow: /og-cover.html
+Disallow: /dev/
+
+# Яндекс
+User-agent: Yandex
+Allow: /
+Disallow: /admin.html
+Disallow: /bonus.html
+Disallow: /og-cover.html
+Disallow: /dev/
+
+Sitemap: https://chistulya.example/sitemap.xml

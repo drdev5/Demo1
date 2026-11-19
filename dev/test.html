@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>TEST</title>
+</head>
+<body>
+<pre id="out">running…</pre>
+<script>
+var REPORT = { errors: [], warns: [], steps: [] };
+var out = document.getElementById('out');
+
+function log(s){ REPORT.steps.push(s); out.textContent = 'running… ' + REPORT.steps.length; }
+function err(s){ REPORT.errors.push(s); }
+
+function hookFrame(f){
+  f.addEventListener('load', function(){
+    try {
+      f.contentWindow.onerror = function(m, src, l, c){ err('[iframe onerror] ' + m + ' @' + String(src).split('/').pop() + ':' + l + ':' + c); };
+    } catch(e){}
+  });
+}
+
+function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+
+function loadFrame(url){
+  return new Promise(function(resolve){
+    var f = document.createElement('iframe');
+    f.style.cssText = 'width:1280px;height:900px;border:0';
+    f.src = url;
+    hookFrame(f);
+    f.onload = function(){
+      try { f.contentWindow.onerror = function(m, src, l, c){ err('[' + url + '] ' + m + ' @' + String(src).split('/').pop() + ':' + l + ':' + c); }; } catch(e){}
+      resolve(f);
+    };
+    document.body.appendChild(f);
+  });
+}
+
+function W(f){ return f.contentWindow; }
+function D(f){ return f.contentDocument; }
+
+function check(name, cond, detail){
+  log((cond ? 'PASS' : 'FAIL') + ' — ' + name + (detail !== undefined ? ' :: ' + JSON.stringify(detail) : ''));
+  if (!cond) REPORT.errors.push('CHECK FAILED: ' + name + (detail !== undefined ? ' :: ' + JSON.stringify(detail) : ''));
+}
+
+async function testIndex(){
+  var f = await loadFrame('/index.html');
+  var w = W(f), d = D(f);
+  await wait(400);
+
+  /* --- рендер услуг --- */
+  var cards = d.querySelectorAll('.svc2');
+  check('услуги отрисованы (17 карточек)', cards.length === 17, cards.length);
+  check('у всех услуг есть цена', Array.prototype.every.call(cards, function(c){ return /BYN/.test(c.textContent); }));
+  check('у всех услуг есть описание', Array.prototype.every.call(cards, function(c){ var p = c.querySelector('.svc2-desc'); return p && p.textContent.trim().length > 5; }));
+  check('кнопка «Вызвать клининг» ведёт к услугам', (d.querySelector('.hero-cta a[href="#services"]') !== null));
+  check('форма заказа на месте', !!d.getElementById('leadForm') && !!d.getElementById('fPhone'));
+
+  /* --- слайдер: SVG-сцены --- */
+  check('сцена ДО вставлена', d.querySelectorAll('#baDirty svg').length === 1, d.querySelectorAll('#baDirty svg').length);
+  check('сцена ПОСЛЕ вставлена', d.querySelectorAll('#baClean svg').length === 1, d.querySelectorAll('#baClean svg').length);
+  var idsD = Array.prototype.map.call(d.querySelectorAll('#baDirty [id]'), function(e){ return e.id; });
+  var idsC = Array.prototype.map.call(d.querySelectorAll('#baClean [id]'), function(e){ return e.id; });
+  check('id градиентов не пересекаются', idsD.filter(function(x){ return idsC.indexOf(x) >= 0; }).length === 0, idsD.slice(0,4).concat(idsC.slice(0,4)));
+  check('в чистой сцене нет серого неба', d.querySelector('#baClean') && d.querySelector('#baClean').innerHTML.indexOf('glassC') >= 0);
+
+  /* --- брендинг из config --- */
+  check('COPYRIGHT подставлен', (d.getElementById('fCopyright')||{}).textContent === '© ' + new Date().getFullYear() + ' ЧИСТЮЛЯ', (d.getElementById('fCopyright')||{}).textContent);
+  check('телефон в шапке', !!(d.getElementById('fPhoneBtn')||{}).textContent, (d.getElementById('fPhoneBtn')||{}).textContent);
+  check('город подставлен', (d.getElementById('fCity')||{}).textContent === 'Барановичи');
+
+  /* --- слайдер: подписи привязаны к бегунку --- */
+  var rng = d.getElementById('baRange');
+  var tl = d.querySelector('.ba-tag.l'), tr = d.querySelector('.ba-tag.r');
+  if (rng && tl && tr){
+    function pos(v){
+      rng.value = v; rng.dispatchEvent(new Event('input', {bubbles:true}));
+      var ba = d.getElementById('ba');
+      var w = ba.clientWidth, x = w * v / 100;
+      var lr = tl.getBoundingClientRect(), rr = tr.getBoundingClientRect();
+      var br = ba.getBoundingClientRect();
+      return {
+        knob: br.left + x,
+        lRight: lr.right, lLeft: lr.left, lOpacity: tl.style.opacity,
+        rLeft: rr.left, rRight: rr.right, rOpacity: tr.style.opacity
+      };
+    }
+    var mid = pos(50);
+    check('«ДО» слева от бегунка', mid.lRight <= mid.knob + 1, mid);
+    check('«ПОСЛЕ» справа от бегунка', mid.rLeft >= mid.knob - 1, mid);
+    check('обе подписи видны в середине', mid.lOpacity === '1' && mid.rOpacity === '1', mid);
+    var left = pos(0);
+    check('на 0% подпись «ДО» спрятана', left.lOpacity === '0', left);
+    check('на 0% подпись «ПОСЛЕ» показана', left.rOpacity === '1', left);
+    var right = pos(100);
+    check('на 100% подпись «ПОСЛЕ» спрятана', right.rOpacity === '0', right);
+    check('на 100% подпись «ДО» показана', right.lOpacity === '1', right);
+    pos(52);
+  }
+  /* --- таблички ГРЯЗНУЛЯ / ЧИСТЮЛЯ в одном месте --- */
+  var cardD = d.querySelector('#baDirty text'), cardC = d.querySelector('#baClean text');
+  check('табличка «ГРЯЗНУЛЯ» есть', !!cardD && cardD.textContent.trim() === 'ГРЯЗНУЛЯ', cardD && cardD.textContent);
+  check('табличка «ЧИСТЮЛЯ» есть', !!cardC && cardC.textContent.trim() === 'ЧИСТЮЛЯ', cardC && cardC.textContent);
+  if (cardD && cardC){
+    check('таблички в одинаковых координатах', cardD.getAttribute('x') === cardC.getAttribute('x') && cardD.getAttribute('y') === cardC.getAttribute('y'),
+      {d:[cardD.getAttribute('x'), cardD.getAttribute('y')], c:[cardC.getAttribute('x'), cardC.getAttribute('y')]});
+  }
+
+  /* --- дубли id --- */
+  var allIds = {}, dupes = [];
+  Array.prototype.forEach.call(d.querySelectorAll('[id]'), function(e){
+    if (allIds[e.id]) dupes.push(e.id); else allIds[e.id] = 1;
+  });
+  check('нет дублей id на странице', dupes.length === 0, dupes);
+
+  /* --- вход оператора --- */
+  var dot = d.getElementById('opDot');
+  check('кнопка оператора есть', !!dot);
+  if (dot){ dot.click(); await wait(150); }
+  var modal = d.getElementById('opLogin');
+  check('модалка PIN открывается', !!modal);
+  if (modal){
+    var pin = d.getElementById('opPin');
+    pin.value = '1234';
+    d.getElementById('opOk').click();
+    await wait(100);
+    check('неверный PIN отклонён', d.getElementById('opErr').textContent.indexOf('Неверный') >= 0, d.getElementById('opErr').textContent);
+    d.getElementById('opCancel').click();
+  }
+  /* ссылка в подвале */
+  var opl = d.getElementById('opLink');
+  check('ссылка входа в подвале есть', !!opl);
+  if (opl){ opl.click(); await wait(120); check('модалка по ссылке в подвале', !!d.getElementById('opLogin')); if (d.getElementById('opLogin')) d.getElementById('opCancel').click(); }
+
+  /* --- форма заявки --- */
+  w.localStorage.removeItem('chistulya_v1');
+  check('согласие не отмечено заранее (требование закона)', !d.getElementById('fConsent').checked);
+  check('в согласии есть ссылка на Политику', !!(d.querySelector('.consent a[href="privacy.html"]')));
+  var gen = d.querySelector('[data-id="gen"]');
+  check('карточка услуги кликабельна', !!gen);
+  if (gen) gen.click();
+  await wait(200);
+  var ph = d.getElementById('fPhone');
+  ph.value = '';
+  '291234567'.split('').forEach(function(x){ ph.value += x; ph.dispatchEvent(new Event('input', {bubbles:true})); });
+  d.getElementById('fName').value = 'Тест Клиент';
+  d.getElementById('fConsent').checked = true;
+  d.getElementById('leadForm').dispatchEvent(new Event('submit', {bubbles:true, cancelable:true}));
+  await wait(700);
+  check('после отправки — переход на bonus.html', /bonus\.html/.test(w.location.href), w.location.href);
+  return f;
+}
+
+async function testBonus(f){
+  var w = W(f), d = D(f);
+  await wait(300);
+  check('кнопка «Почистить мебель» есть', !!d.getElementById('playBtn'));
+  if (!d.getElementById('playBtn')) return;
+  d.getElementById('playBtn').click();
+  await wait(250);
+  var gBody = d.getElementById('gBody');
+  check('меню игры открылось', !!gBody && gBody.innerHTML.length > 20);
+  var games = d.querySelectorAll('[data-play]');
+  check('3 игры в меню', games.length === 3, games.length);
+  check('нет распределения процентов', !gBody.innerHTML.match(/m-odds/), gBody.innerHTML.indexOf('m-odds'));
+
+  /* запускаем игру «Отмой диван» */
+  var wipe = d.querySelector('[data-play="wipe"]');
+  check('игра wipe есть', !!wipe);
+  if (wipe) wipe.click();
+  await wait(500);
+  var st = w.GAME && w.GAME.lastStage;
+  check('Stage создан', !!st);
+  if (!st) return;
+  check('5 инструментов', d.querySelectorAll('.g-tool-btn').length === 5, d.querySelectorAll('.g-tool-btn').length);
+  var types = {};
+  st.targets.forEach(function(t){ types[t.type] = (types[t.type]||0)+1; });
+  check('3 вида грязи в игре', Object.keys(types).length === 3, types);
+  check('легенда «Чем чистить» есть', !!(d.getElementById('gLegend')||{}).textContent, (d.getElementById('gLegend')||{}).textContent);
+  check('канвас отрисован', st.canvas && st.canvas.width > 0, st.canvas && st.canvas.width);
+
+  /* тряпка требует 2 прохода (протирание) */
+  var water = st.targets.filter(function(t){ return t.type === 'water'; })[0];
+  if (water){
+    st.setTool('rag');
+    var rw = st.canvas.getBoundingClientRect();
+    var wx = rw.left + water.x * (rw.width / st.W), wy = rw.top + water.y * (rw.height / st.H);
+    st.canvas.dispatchEvent(new PointerEvent('pointerdown', {clientX:wx, clientY:wy, bubbles:true, pointerId:1, isPrimary:true, buttons:1}));
+    st.canvas.dispatchEvent(new PointerEvent('pointerup', {clientX:wx, clientY:wy, bubbles:true, pointerId:1, isPrimary:true}));
+    await wait(80);
+    check('тряпка не убирает сразу (нужно протирать)', water.alive === true, {prog: water.prog});
+    /* водим по пятну туда-сюда, как настоящий игрок */
+    for (var i = 1; i <= 24; i++){
+      var off = (i % 2 ? 1 : -1) * 12;
+      st.canvas.dispatchEvent(new PointerEvent('pointermove', {clientX:wx + off, clientY:wy, bubbles:true, pointerId:1, isPrimary:true, buttons:1}));
+    }
+    await wait(150);
+    check('тряпка убирает после протирания', water.alive === false, {prog: water.prog});
+  }
+
+  /* неверный инструмент -> подсказка */
+  var grease = st.targets.filter(function(t){ return t.type === 'grease'; })[0];
+  if (grease){
+    var r = st.canvas.getBoundingClientRect();
+    var sx = r.left + grease.x * (r.width / st.W), sy = r.top + grease.y * (r.height / st.H);
+    st.canvas.dispatchEvent(new PointerEvent('pointerdown', {clientX:sx, clientY:sy, bubbles:true, pointerId:1, isPrimary:true, buttons:1}));
+    st.canvas.dispatchEvent(new PointerEvent('pointerup', {clientX:sx, clientY:sy, bubbles:true, pointerId:1, isPrimary:true}));
+    await wait(100);
+    var msg = (d.querySelector('.g-msg')||{}).textContent;
+    check('подсказка о верном инструменте', msg === 'Для такой грязи нужна губка', msg);
+    check('грязь не убрана неверным инструментом', grease.alive === true);
+  }
+  /* правильный инструмент убирает */
+  st.setTool('sponge');
+  if (grease){
+    var r2 = st.canvas.getBoundingClientRect();
+    var sx2 = r2.left + grease.x * (r2.width / st.W), sy2 = r2.top + grease.y * (r2.height / st.H);
+    st.canvas.dispatchEvent(new PointerEvent('pointerdown', {clientX:sx2, clientY:sy2, bubbles:true, pointerId:1, isPrimary:true, buttons:1}));
+    st.canvas.dispatchEvent(new PointerEvent('pointerup', {clientX:sx2, clientY:sy2, bubbles:true, pointerId:1, isPrimary:true}));
+    await wait(150);
+    check('правильный инструмент убирает грязь', grease.alive === false);
+  }
+  /* победа */
+  st.targets.forEach(function(t){ if (t.alive) st._clear(t); });
+  await wait(400);
+  check('экран победы', !!(d.getElementById('gBody')||{}).innerHTML.match(/Отлично|g-win|выиграли|Поздравляем/i), (d.getElementById('gBody')||{}).innerHTML.slice(0,120));
+  /* кнопка «Отлично» закрывает */
+  var okBtn = d.querySelector('#gBody button');
+  check('кнопка на экране победы есть', !!okBtn);
+  if (okBtn) okBtn.click();
+  await wait(200);
+  check('игра закрылась', !d.getElementById('gOverlay') || d.getElementById('gOverlay').style.display === 'none' || !d.getElementById('gOverlay').classList.contains('open'), (d.getElementById('gOverlay')||{}).className);
+}
+
+async function testAllGames(){
+  var f = await loadFrame('/index.html');
+  var w = W(f), d = D(f);
+  await wait(300);
+  var modes = ['vac', 'wipe', 'floor'];
+  var expect = {
+    vac: {dust:1, hair:1, crumb:1},
+    wipe:{grease:1, stain:1, water:1},
+    floor:{burnt:1, glue:1, dustin:1}
+  };
+  for (var m = 0; m < modes.length; m++){
+    var mode = modes[m];
+    /* создаём заявку, чтобы было что открывать */
+    w.localStorage.removeItem('chistulya_v1');
+    d.querySelector('[data-id="gen"]').click();
+    await wait(150);
+    var ph = d.getElementById('fPhone');
+    ph.value = '291234567'; ph.dispatchEvent(new Event('input', {bubbles:true}));
+    d.getElementById('fName').value = 'Игра ' + mode;
+    d.getElementById('fConsent').checked = true;
+    d.getElementById('leadForm').dispatchEvent(new Event('submit', {bubbles:true, cancelable:true}));
+    await wait(700);
+    var dd = D(f);
+    if (!dd.getElementById('playBtn')){ check('игра ' + mode + ' — нет кнопки', false); continue; }
+    dd.getElementById('playBtn').click();
+    await wait(200);
+    var btn = dd.querySelector('[data-play="' + mode + '"]');
+    if (!btn){ check('игра ' + mode + ' — нет пункта меню', false); continue; }
+    btn.click();
+    await wait(450);
+    var s2 = w.GAME.lastStage;
+    var tt = {};
+    s2.targets.forEach(function(t){ tt[t.type] = (tt[t.type]||0)+1; });
+    var ok = Object.keys(expect[mode]).every(function(k){ return tt[k] > 0; }) && Object.keys(tt).length === 3;
+    check('игра ' + mode + ': 3 правильных вида грязи', ok, tt);
+    check('игра ' + mode + ': таймер запущен', s2.running === true);
+    /* закрываем */
+    s2.stop();
+    var close = dd.getElementById('gClose');
+    if (close) close.click();
+    await wait(200);
+  }
+}
+
+async function testAdmin(){
+  var f = await loadFrame('/admin.html');
+  var w = W(f), d = D(f);
+  await wait(500);
+  check('таблица заявок отрисована', !!d.getElementById('appsBody'));
+  var rows = d.querySelectorAll('#appsBody tr');
+  check('есть заявки (после теста выше)', rows.length >= 1, rows.length);
+  check('счётчики отрисованы', d.querySelectorAll('#admStats .adm-stat, #admStats > *').length > 0);
+  check('подпись про хранение', !!(d.getElementById('admStoreHint')||{}).textContent, (d.getElementById('admStoreHint')||{}).textContent);
+}
+
+async function testEdit(){
+  var f = await loadFrame('/index.html');
+  var ww = W(f), dd = D(f);
+  await wait(300);
+  var apps = ww.CHIST ? ww.CHIST.allApps() : [];
+  check('заявка создана и сохранена', apps.length >= 1, apps.length);
+  if (!apps.length) return;
+  var id = apps[0].id;
+  ww.CHIST.updateApp(id, {gamePlayed: true, gameName: 'Тест'});
+  ww.location.href = '/index.html?edit=' + id + '#order';
+  await wait(900);
+  check('форма правки загрузилась', (W(f).document.getElementById('fPhone')||{}).value.length > 0, (W(f).document.getElementById('fPhone')||{}).value);
+  var d2 = W(f).document;
+  var n0 = ww.CHIST.allApps().length;
+  d2.getElementById('fConsent').checked = true;
+  d2.getElementById('leadForm').dispatchEvent(new Event('submit', {bubbles:true, cancelable:true}));
+  await wait(800);
+  check('правка не создала новую заявку', ww.CHIST.allApps().length === n0, {before:n0, after:ww.CHIST.allApps().length});
+  check('игра не перезапускается (нет кнопки)', !d2.getElementById('playBtn'));
+}
+
+async function testMobile(){
+  var f = document.createElement('iframe');
+  f.style.cssText = 'width:390px;height:800px;border:0';
+  f.src = '/index.html';
+  document.body.appendChild(f);
+  await new Promise(function(r){ f.onload = r; });
+  await wait(700);
+  var d = D(f), w = W(f);
+  /* ширина документа не должна превышать окно */
+  var over = d.documentElement.scrollWidth - d.documentElement.clientWidth;
+  check('мобильная вёрстка: нет горизонтальной прокрутки (390px)', over <= 2, {scrollW: d.documentElement.scrollWidth, clientW: d.documentElement.clientWidth});
+
+  /* элементы, вылезающие за ширину экрана (учитываем обрезку overflow:hidden) */
+  function clipped(el){
+    var p = el.parentElement;
+    while (p && p !== d.body){
+      var st = w.getComputedStyle(p);
+      if (st.overflow === 'hidden' || st.overflowX === 'hidden') return true;
+      p = p.parentElement;
+    }
+    return false;
+  }
+  var bad = [];
+  Array.prototype.forEach.call(d.querySelectorAll('body *'), function(el){
+    if (el.tagName === 'path' || el.tagName === 'g' || el.tagName === 'svg' || el.namespaceURI === 'http://www.w3.org/2000/svg') return;
+    var r = el.getBoundingClientRect();
+    if (r.width > 0 && (r.right > 392 || r.left < -2)){
+      var st = w.getComputedStyle(el);
+      if (st.position === 'fixed') return;
+      if (clipped(el)) return;
+      bad.push(el.tagName + '.' + (el.className || '').toString().slice(0, 26) + ' [' + Math.round(r.left) + '..' + Math.round(r.right) + ']');
+    }
+  });
+  check('ничего не вылезает за экран телефона', bad.length === 0, bad.slice(0, 6));
+
+  /* кнопки достаточно большие для пальца */
+  var small = [];
+  Array.prototype.forEach.call(d.querySelectorAll('a.btn, button.btn, button.applied-play, .stab'), function(el){
+    var r = el.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0 && r.height < 36) small.push((el.className || '') + ' h=' + Math.round(r.height));
+  });
+  check('кнопки не мельче 36px по высоте', small.length === 0, small.slice(0, 5));
+}
+
+async function testCabinet(){
+  var f = await loadFrame('/index.html');
+  var w = W(f), d = D(f);
+  await wait(400);
+  /* создаём заявку */
+  w.localStorage.removeItem('chistulya_v1');
+  d.querySelector('[data-id="gen"]').click();
+  await wait(150);
+  var ph = d.getElementById('fPhone');
+  ph.value = '2911111111'; ph.dispatchEvent(new Event('input', {bubbles:true}));
+  d.getElementById('fName').value = 'Кабинет Тест';
+  d.getElementById('fConsent').checked = true;
+  d.getElementById('leadForm').dispatchEvent(new Event('submit', {bubbles:true, cancelable:true}));
+  await wait(700);
+  /* возвращаемся на главную и смотрим кабинет */
+  w.location.href = '/index.html#cabinet';
+  await wait(900);
+  var d2 = D(f);
+  var cab = d2.getElementById('cabinet');
+  check('секция кабинета есть', !!cab);
+  if (cab){
+    /* кабинет открывается по номеру телефона */
+    var cp = d2.getElementById('cabPhone');
+    cp.value = '2911111111'; cp.dispatchEvent(new Event('input', {bubbles:true}));
+    d2.getElementById('cabBtn').click();
+    await wait(400);
+    var txt = (d2.getElementById('cabOut')||{}).textContent || '';
+    check('кабинет показывает номер телефона', txt.indexOf('29') >= 0, txt.slice(0, 120));
+    check('кабинет показывает заявку', txt.indexOf('Кабинет Тест') >= 0 || txt.indexOf('111') >= 0, txt.slice(0, 160));
+    check('в кабинете нет ID заявок', !/CH-\d+/.test(txt), (txt.match(/CH-\d+/) || ['нет'])[0]);
+  }
+}
+
+async function testAdminFlow(){
+  var f = await loadFrame('/admin.html');
+  var w = W(f), d = D(f);
+  await wait(600);
+  /* создаём заявку из другого окна */
+  var f2 = await loadFrame('/index.html');
+  var w2 = W(f2), d2 = D(f2);
+  await wait(300);
+  d2.querySelector('[data-id="gen"]').click();
+  await wait(150);
+  var ph = d2.getElementById('fPhone');
+  ph.value = '2922222222'; ph.dispatchEvent(new Event('input', {bubbles:true}));
+  d2.getElementById('fName').value = 'Админ Тест';
+  d2.getElementById('fConsent').checked = true;
+  d2.getElementById('leadForm').dispatchEvent(new Event('submit', {bubbles:true, cancelable:true}));
+  await wait(700);
+  /* обновляем админку */
+  d.getElementById('refreshBtn').click();
+  await wait(400);
+  var rows = d.querySelectorAll('#appsBody tr');
+  check('в админке видна новая заявка', d.getElementById('appsBody').textContent.indexOf('Админ Тест') >= 0, rows.length);
+  /* клик по кнопке «Открыть» открывает модалку */
+  var openBtn = d.querySelector('#appsBody [data-open]');
+  check('кнопка «Открыть» есть', !!openBtn);
+  if (openBtn){ openBtn.click(); await wait(300); }
+  check('модалка заявки открылась', !!d.getElementById('modal') && d.getElementById('modal').className.indexOf('open') >= 0, (d.getElementById('modal')||{}).className);
+  var mBody = (d.getElementById('mBody')||{}).innerHTML || '';
+  check('в модалке нет ID заявки', !/CH-\d+/.test(mBody), (mBody.match(/CH-\d+/) || ['нет'])[0]);
+  check('в модалке есть телефон', /\(29\)|29/.test(mBody), mBody.slice(0, 100));
+  /* закрываем */
+  var mc = d.getElementById('mClose');
+  if (mc) mc.click();
+  /* вкладки фильтров */
+  var tabs = d.querySelectorAll('.adm-tab');
+  check('5 вкладок фильтра', tabs.length === 5, tabs.length);
+  for (var i = 0; i < tabs.length; i++){
+    tabs[i].click(); await wait(120);
+  }
+  check('переключение вкладок не падает', true);
+}
+
+async function testNoErrors(){
+  var pages = ['/index.html', '/bonus.html', '/admin.html', '/404.html', '/privacy.html'];
+  for (var i = 0; i < pages.length; i++){
+    var f = await loadFrame(pages[i]);
+    await wait(600);
+    var d = D(f), w = W(f);
+    var bar = d.getElementById('errBar');
+    var barTxt = bar ? bar.textContent : '';
+    check('нет JS-ошибок на ' + pages[i], !bar || bar.style.display === 'none' || !barTxt.trim(), barTxt.trim());
+    /* доставка заявок не должна падать, даже если каналы не настроены */
+    if (w.CHIST && typeof w.CHIST.reload === 'function'){
+      check('CHIST.reload доступен на ' + pages[i], true);
+    }
+    if (pages[i] === '/privacy.html'){
+      check('политика: есть заголовок и разделы', /Политика обработки персональных данных/.test(d.title) && d.querySelectorAll('h2').length >= 6, d.querySelectorAll('h2').length);
+      check('политика: подставлены реквизиты оператора', (d.getElementById('pLegal')||{}).textContent === (w.CONFIG||{}).LEGAL, (d.getElementById('pLegal')||{}).textContent);
+      check('политика: есть телефон из конфига', !!(d.getElementById('pPhone')||{}).getAttribute('href'), (d.getElementById('pPhone')||{}).getAttribute('href'));
+    }
+  }
+}
+
+async function testDelivery(){
+  var f = await loadFrame('/index.html');
+  var w = W(f), d = D(f);
+  await wait(400);
+  /* проверяем, что отправка формы не бросает исключений и переходит на bonus */
+  var errsBefore = REPORT.errors.length;
+  d.querySelector('[data-id="surf"]').click();
+  await wait(150);
+  var ph = d.getElementById('fPhone');
+  ph.value = '295555555'; ph.dispatchEvent(new Event('input',{bubbles:true}));
+  d.getElementById('fName').value = 'Доставка Тест';
+  d.getElementById('fConsent').checked = true;
+  d.getElementById('leadForm').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+  await wait(900);
+  check('отправка заявки не дала ошибок', REPORT.errors.length === errsBefore, REPORT.errors.slice(errsBefore));
+  check('переход на bonus после отправки', /bonus\.html/.test(w.location.href), w.location.href);
+}
+
+async function testMaxPromo(){
+  var f = await loadFrame('/index.html');
+  var w = W(f), d = D(f);
+  await wait(400);
+  w.localStorage.removeItem('chistulya_v1');
+  w.CHIST.reset();          /* чистим и память, и хранилище */
+  var PHONE = '+375 (29) 777-77-77';
+
+  /* 1) сначала заказ без скидок, потом клиент выигрывает скидки */
+  d.querySelector('[data-id="gen"]').click();
+  await wait(150);
+  var ph = d.getElementById('fPhone');
+  ph.value = '297777777'; ph.dispatchEvent(new Event('input',{bubbles:true}));
+  d.getElementById('fName').value = 'Бонус Тест';
+  d.getElementById('fConsent').checked = true;
+  d.getElementById('leadForm').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+  await wait(800);
+  check('первый заказ создан', w.CHIST.allApps().length === 1, w.CHIST.allApps().length);
+
+  /* 2) клиент выигрывает три скидки «на следующий заказ» */
+  w.CHIST.addPromo({title:'Скидка 10% на следующий заказ', percent:10, scope:'next', phone:PHONE, note:'игра'});
+  w.CHIST.addPromo({title:'Скидка 15% на следующий заказ', percent:15, scope:'next', phone:PHONE, note:'игра'});
+  w.CHIST.addPromo({title:'Скидка 20% на следующий заказ', percent:20, scope:'next', phone:PHONE, note:'игра'});
+
+  var best = w.CHIST.nextPromo(PHONE);
+  check('nextPromo возвращает максимальную (20%)', best && best.percent === 20, best && best.percent);
+
+  /* 3) оператор в карточке заявки видит накопленный бонус */
+  var af = await loadFrame('/admin.html');
+  await wait(700);
+  var ad = D(af);
+  var openBtn = ad.querySelector('#appsBody [data-open]');
+  if (openBtn){ openBtn.click(); await wait(350); }
+  var mTxt = (ad.getElementById('mBody')||{}).textContent || '';
+  check('в админке нет выпадающего списка скидок', !ad.getElementById('admDisc'), !!ad.getElementById('admDisc'));
+  check('в админке нет кнопки «Применить к заявке»', !ad.getElementById('applyDisc'));
+  check('в карточке заявки есть блок «БОНУС КЛИЕНТА»', mTxt.indexOf('БОНУС КЛИЕНТА') >= 0, mTxt.slice(-300));
+  check('оператор видит максимальную скидку (20%)', /20%/.test(mTxt), mTxt.slice(-300));
+  check('в блоке сказано, что заменены остальные', /максимальная|заменен/i.test(mTxt), mTxt.slice(-300));
+
+  /* 4) второй заказ на тот же номер — применяется максимальная скидка */
+  w.location.href = '/index.html';
+  await wait(900);
+  var d2 = D(f);
+  d2.querySelector('[data-id="surf"]').click();
+  await wait(200);
+  var ph2 = d2.getElementById('fPhone');
+  ph2.value = '297777777'; ph2.dispatchEvent(new Event('input',{bubbles:true}));
+  d2.getElementById('fName').value = 'Бонус Тест 2';
+  d2.getElementById('fConsent').checked = true;
+  d2.getElementById('leadForm').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+  await wait(900);
+
+  var apps = w.CHIST.allApps();
+  var a = apps[0];
+  check('второй заказ создан', apps.length === 2, apps.length);
+  check('применена скидка 20%', a && a.promo && a.promo.percent === 20, a && a.promo);
+  check('итог уменьшен на 20%', a && a.baseTotal && a.total === Math.round(a.baseTotal * 0.8),
+        a && {base: a.baseTotal, total: a.total});
+  var all = w.CHIST.allPromos();
+  check('меньшие скидки помечены заменёнными',
+        all.filter(function(x){ return x.supersededBy; }).length === 2,
+        all.map(function(x){ return x.percent + (x.supersededBy ? '→' + x.supersededBy : '') + (x.used ? ' used' : ''); }));
+  check('неиспользованных скидок не осталось',
+        all.filter(function(x){ return !x.used; }).length === 0,
+        all.filter(function(x){ return !x.used; }).length);
+}
+
+(async function(){
+  try {
+    await testIndex();
+    await testBonus(document.querySelector('iframe'));
+    await testAdmin();
+    await testEdit();
+    await testAllGames();
+    await testMobile();
+    await testCabinet();
+    await testAdminFlow();
+    await testNoErrors();
+    await testDelivery();
+    await testMaxPromo();
+  } catch (e){
+    err('EXCEPTION: ' + (e && e.message) + ' @ ' + (e && e.stack || '').split('\n').slice(0,3).join(' | '));
+  }
+  REPORT.ok = REPORT.errors.length === 0;
+  document.title = 'DONE';
+  out.textContent = JSON.stringify(REPORT, null, 1);
+})();
+</script>
+</body>
+</html>

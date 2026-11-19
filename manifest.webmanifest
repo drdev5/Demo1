@@ -1,0 +1,14 @@
+{
+  "name": "ЧИСТЮЛЯ — клининговая служба",
+  "short_name": "ЧИСТЮЛЯ",
+  "description": "Уборка квартир, домов и офисов, химчистка мебели, мойка окон.",
+  "lang": "ru-BY",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6fbff",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

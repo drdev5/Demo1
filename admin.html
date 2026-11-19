@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ЧИСТЮЛЯ — кабинет оператора</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css?v=29">
+<script src="config.js?v=29"></script>
+</head>
+<body style="background:#f1f7fb">
+
+<header class="hdr" style="border-bottom:1px solid var(--s100)">
+  <div class="container hdr-in">
+    <a href="index.html" class="logo">
+      <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg></span>
+      ЧИСТЮЛЯ <span style="font-weight:600;color:var(--muted);font-size:13px;letter-spacing:0;margin-left:6px">кабинет оператора</span>
+    </a>
+    <nav class="nav">
+      <a class="btn-admin" href="index.html">← Открыть сайт</a>
+      <button class="btn-admin" id="logoutBtn" style="border:none;cursor:pointer;background:none;font-family:inherit">Выйти</button>
+    </nav>
+  </div>
+</header>
+
+<div id="diagBar" style="display:none;background:#0c4a6e;color:#e0f2fe;padding:10px 20px;font-family:ui-monospace,Menlo,monospace;font-size:12px;white-space:pre-wrap"></div>
+
+<!-- ================= КАБИНЕТ ================= -->
+<div class="container" id="admView" style="padding:28px 0 70px">
+
+  <div class="adm-hero">
+    <div>
+      <h2 class="adm-h1">Панель оператора</h2>
+      <p class="adm-sub">Заявки клиентов с сайта в реальном времени. Работайте с ними прямо здесь — статус, ответ, скидки.</p>
+    </div>
+    <button class="btn btn-primary" id="refreshBtn">Обновить</button>
+  </div>
+
+  <div class="adm-stats" id="admStats"></div>
+
+  <div class="adm-tabs" id="tabs">
+    <button class="adm-tab on" data-tab="apps">Все заявки</button>
+    <button class="adm-tab" data-tab="new">Новые</button>
+    <button class="adm-tab" data-tab="work">В работе</button>
+    <button class="adm-tab" data-tab="done">Выполнены</button>
+    <button class="adm-tab" data-tab="disc">Скидки</button>
+  </div>
+
+  <input class="input" id="search" placeholder="Поиск по имени или телефону…" style="margin-bottom:16px">
+
+  <div class="card card-pad" style="padding:8px 18px 18px;overflow-x:auto">
+    <div id="appsPane">
+      <table class="adm-table">
+        <thead><tr><th>№</th><th>Дата</th><th>Клиент</th><th>Телефон</th><th>Услуги</th><th class="num">Сумма</th><th>Статус</th><th></th></tr></thead>
+        <tbody id="appsBody"></tbody>
+      </table>
+      <p class="hint" id="appsEmpty" style="display:none;text-align:center;padding:28px 0">Заявок пока нет. Откройте сайт и оставьте заявку — она появится здесь.</p>
+    </div>
+
+    <div id="discPane" style="display:none">
+      <table class="adm-table">
+        <thead><tr><th>Скидка</th><th>Источник</th><th>Телефон</th><th>Дата</th><th>Статус</th><th>Заказ</th></tr></thead>
+        <tbody id="discBody"></tbody>
+      </table>
+      <p class="hint" id="discEmpty" style="display:none;text-align:center;padding:28px 0">Скидок пока нет. Их выдаёт мини-игра на сайте.</p>
+    </div>
+  </div>
+
+  <div class="adm-foot">
+    <button class="btn btn-ghost btn-sm" id="resetBtn">Очистить заявки</button>
+    <span class="adm-hint" id="admStoreHint">Заявки хранятся в этом браузере</span>
+  </div>
+</div>
+
+<!-- ================= МОДАЛКА ЗАЯВКИ ================= -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3 id="mTitle" style="margin:0;font-size:20px">Заявка</h3>
+      <button class="btn-mini" id="mClose">Закрыть</button>
+    </div>
+    <div class="modal-bd" id="mBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div id="errBar" role="alert" style="display:none;position:fixed;top:10px;right:10px;z-index:9999;max-width:440px;background:#991b1b;color:#fecaca;padding:10px 34px 10px 12px;border-radius:12px;font:12px/1.5 ui-monospace,Menlo,monospace;box-shadow:0 10px 34px rgba(0,0,0,.4);white-space:pre-wrap;max-height:48vh;overflow:auto">
+  <button id="errClose" aria-label="Закрыть" style="position:absolute;top:2px;right:4px;background:none;border:none;color:#fecaca;font-size:20px;line-height:1;cursor:pointer;padding:2px 7px">×</button>
+  <span id="errText"></span>
+</div>
+<script>
+(function(){
+  var bar = document.getElementById('errBar');
+  var txt = document.getElementById('errText');
+  var closeBtn = document.getElementById('errClose');
+  if (closeBtn) closeBtn.addEventListener('click', function(){ bar.style.display = 'none'; });
+  window.addEventListener('error', function(e){
+    var msg = (e.error && e.error.message) || e.message || 'unknown';
+    var file = (e.filename || '').split('/').pop() || '';
+    txt.textContent = 'ERROR: ' + msg + '\n@ ' + file + ':' + (e.lineno || '?');
+    bar.style.display = 'block';
+    clearTimeout(window.__errT);
+    window.__errT = setTimeout(function(){ bar.style.display = 'none'; }, 8000);
+  });
+})();
+</script>
+
+<script src="script.js?v=29"></script>
+<script src="admin.js?v=29"></script>
+</body>
+</html>

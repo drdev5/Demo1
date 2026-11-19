@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ЧИСТЮЛЯ — заявка принята</title>
+<meta name="description" content="Заявка принята. Оператор свяжется в течение 15 минут. Почистите мебель в мини-игре и получите скидку на заказ.">
+<meta name="theme-color" content="#0ea5e9">
+<meta name="robots" content="noindex, follow">
+<link rel="stylesheet" href="styles.css?v=29">
+<link rel="icon" href="favicon.svg?v=29" type="image/svg+xml">
+<script src="config.js?v=29"></script>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="container hdr-in">
+    <a href="index.html" class="logo">
+      <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg></span>
+      ЧИСТЮЛЯ
+    </a>
+    <nav class="nav">
+      <a href="index.html" class="nav-keep">На главную</a>
+      <a href="index.html#cabinet" class="nav-keep">Мои заявки</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ================= ПОДТВЕРЖДЕНИЕ ================= -->
+<section class="bonus-hero">
+  <div class="container">
+    <span class="eyebrow" id="heroBadge">Заявка принята</span>
+    <h1 id="heroTitle">Свяжемся с вами в рабочие часы</h1>
+    <p id="heroText">Оператор перезвонит как можно скорее — обычно в течение 15 минут, но в загруженные дни чуть позже.</p>
+    <div id="applied" class="applied"></div>
+  </div>
+</section>
+
+<!-- ================= ФИНАЛ ================= -->
+<section id="final" style="padding-top:0">
+  <div class="container" style="text-align:center">
+    <h2 style="font-size:clamp(22px,3.4vw,32px)">Спасибо, что выбрали ЧИСТЮЛЯ</h2>
+    <p style="color:var(--muted);max-width:560px;margin:0 auto 24px">Бонусы привязаны к вашему номеру — они появятся в разделе «Мои заявки», и оператор применит их при расчёте.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a href="index.html" class="btn btn-primary">Вернуться на сайт</a>
+      <a href="index.html#cabinet" class="btn btn-ghost">Мои заявки и бонусы</a>
+    </div>
+  </div>
+</section>
+
+<footer class="ftr">
+  <div class="container">
+    <div class="ftr-bot" style="border-top:none">
+      <span id="fCopyright">© 2026 ЧИСТЮЛЯ</span>
+      <span id="fLegal">ООО «ЧИСТЮЛЯ» · УНП 000000000</span>
+      <a href="privacy.html" class="op-link" style="color:inherit">Политика обработки данных</a>
+      <a class="op-link" href="#" id="opLink">Вход для персонала</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ================= ОКНО ИГРЫ ================= -->
+<div class="g-overlay" id="gOverlay">
+  <div class="g-modal">
+    <div class="g-modal-hd">
+      <div>
+        <h3 id="gTitle" style="margin:0 0 4px;font-size:23px"></h3>
+        <p id="gHint" style="margin:0;color:var(--muted);font-size:14.5px"></p>
+      </div>
+      <button class="btn-mini" id="gClose">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        Закрыть
+      </button>
+    </div>
+    <div class="g-modal-bd" id="gBody"></div>
+  </div>
+</div>
+
+<button class="op-dot" id="opDot" aria-label="Вход для персонала" title="">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10" width="15" height="10.5" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+</button>
+<div class="toast" id="toast"></div>
+<div id="errBar" role="alert" style="display:none;position:fixed;top:10px;right:10px;z-index:9999;max-width:440px;background:#991b1b;color:#fecaca;padding:10px 34px 10px 12px;border-radius:12px;font:12px/1.5 ui-monospace,Menlo,monospace;box-shadow:0 10px 34px rgba(0,0,0,.4);white-space:pre-wrap;max-height:48vh;overflow:auto">
+  <button id="errClose" aria-label="Закрыть" style="position:absolute;top:2px;right:4px;background:none;border:none;color:#fecaca;font-size:20px;line-height:1;cursor:pointer;padding:2px 7px">×</button>
+  <span id="errText"></span>
+</div>
+<script>
+(function(){
+  var bar = document.getElementById('errBar');
+  var txt = document.getElementById('errText');
+  var closeBtn = document.getElementById('errClose');
+  if (closeBtn) closeBtn.addEventListener('click', function(){ bar.style.display = 'none'; });
+  window.addEventListener('error', function(e){
+    var msg = (e.error && e.error.message) || e.message || 'unknown';
+    var file = (e.filename || '').split('/').pop() || '';
+    txt.textContent = 'ERROR: ' + msg + '\n@ ' + file + ':' + (e.lineno || '?');
+    bar.style.display = 'block';
+    clearTimeout(window.__errT);
+    window.__errT = setTimeout(function(){ bar.style.display = 'none'; }, 8000);
+  });
+})();
+</script>
+
+<script src="script.js?v=29"></script>
+<script src="game.js?v=29"></script>
+<script src="bonus.js?v=29"></script>
+</body>
+</html>

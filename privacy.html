@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Политика обработки персональных данных — ЧИСТЮЛЯ</title>
+<meta name="robots" content="noindex, follow">
+<link rel="icon" href="favicon.svg?v=29" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css?v=29">
+<script src="config.js?v=29"></script>
+<style>
+  .pol{max-width:760px;margin:0 auto;padding:40px 0 70px}
+  .pol h1{font-size:clamp(24px,4vw,34px);margin:0 0 8px;color:var(--s800)}
+  .pol h2{font-size:20px;margin:34px 0 10px;color:var(--s700)}
+  .pol p,.pol li{color:var(--ink2);line-height:1.7;font-size:15.5px}
+  .pol ul{padding-left:20px}
+  .pol .meta{color:var(--muted);font-size:13.5px;margin-bottom:26px}
+  .pol .card{background:#fff;border:1px solid var(--s100);border-radius:18px;padding:24px 26px;box-shadow:var(--shadow)}
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="container hdr-in">
+    <a href="index.html" class="logo">
+      <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg></span>
+      ЧИСТЮЛЯ
+    </a>
+    <nav class="nav">
+      <a href="index.html" class="nav-keep">На главную</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container pol">
+  <h1>Политика обработки персональных данных</h1>
+  <p class="meta">Редакция от 19 ноября 2026 г. · оператор — <b id="pLegal">ООО «ЧИСТЮЛЯ»</b></p>
+
+  <div class="card">
+    <h2 style="margin-top:0">1. Какие данные мы собираем</h2>
+    <p>При оформлении заявки на сайте мы просим указать <b>имя и номер телефона</b>, а также — по вашему желанию — комментарий к заказу и фотографию убираемого объекта. Больше никакие данные сайт не собирает: нет регистрации, нет аналитики, отслеживающей вас по интернету.</p>
+
+    <h2>2. Зачем мы их используем</h2>
+    <ul>
+      <li>чтобы связаться с вами и уточнить детали заказа;</li>
+      <li>чтобы рассчитать стоимость и приехать на уборку;</li>
+      <li>чтобы сохранить ваши заявки и выигранные скидки — они привязаны к номеру телефона.</li>
+    </ul>
+
+    <h2>3. Правовое основание</h2>
+    <p>Обработка выполняется на основании вашего <b>согласия</b>, которое вы даёте, отмечая соответствующий чекбокс при отправке заявки (согласие не отмечается заранее), и на основании договора на оказание услуг. Согласие действует 12 месяцев и может быть отозвано в любой момент — позвоните нам или напишите.</p>
+
+    <h2>4. Кому передаются данные</h2>
+    <p>Данные получает только оператор службы уборки — они поступают ему в мессенджер Telegram и в его рабочий кабинет. <b>Третьим лицам данные не продаются и не передаются</b>, за исключением случаев, прямо предусмотренных законом.</p>
+
+    <h2>5. Где хранятся и как защищены</h2>
+    <p>Заявки хранятся в системе приёма заявок службы уборки. Мы принимаем разумные меры защиты: доступ к данным есть только у оператора, история заявок не публикуется. Мы не храним платёжных данных — оплата принимается после оказания услуг.</p>
+
+    <h2>6. Ваши права</h2>
+    <ul>
+      <li>узнать, какие данные о вас обрабатываются;</li>
+      <li>потребовать уточнения, блокирования или удаления данных;</li>
+      <li>отозвать согласие на обработку — после этого данные удаляются, а действующие заказы исполняются в части, необходимой для их завершения.</li>
+    </ul>
+
+    <h2>7. Сроки хранения</h2>
+    <p>Данные хранятся не дольше, чем этого требует цель обработки: заявки и скидки — 12 месяцев с даты последнего обращения, если вы не просите удалить их раньше.</p>
+
+    <h2>8. Контакты</h2>
+    <p>Оператор: <b id="pLegal2">ООО «ЧИСТЮЛЯ»</b><br>
+      Адрес: <span id="pAddress">г. Барановичи, ул. Примерная, 1</span><br>
+      Телефон: <a id="pPhone" href="#">+375 (29) 000-00-00</a><br>
+      Все вопросы по данным — по этому телефону, отвечаем в рабочие часы.</p>
+  </div>
+
+  <p style="margin-top:22px"><a class="btn btn-ghost btn-sm" href="index.html">← На главную</a></p>
+</main>
+
+<footer class="ftr" style="padding:26px 0">
+  <div class="container" style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13.5px;color:#cfe9f7">
+    <span id="fCopyright">© 2026 ЧИСТЮЛЯ</span>
+    <span id="fLegal">ООО «ЧИСТЮЛЯ» · УНП 000000000</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var CFG = window.CONFIG || {};
+  function set(id, v){ var el = document.getElementById(id); if (el && v) el.textContent = v; }
+  set('pLegal', CFG.LEGAL); set('pLegal2', CFG.LEGAL);
+  set('pAddress', CFG.ADDRESS);
+  set('fCopyright', '© ' + new Date().getFullYear() + ' ЧИСТЮЛЯ');
+  set('fLegal', CFG.LEGAL + (CFG.INN ? ' · УНП ' + CFG.INN : ''));
+  var ph = document.getElementById('pPhone');
+  if (ph && CFG.PHONE){ ph.textContent = CFG.PHONE_HUMAN || CFG.PHONE; ph.href = 'tel:' + String(CFG.PHONE).replace(/[^\d+]/g,''); }
+})();
+</script>
+</body>
+</html>

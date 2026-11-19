@@ -1,0 +1,18 @@
+# ==========================================================
+#  Свой домен на Cloudflare Pages / GitHub Pages / Netlify
+# ==========================================================
+#  Инструкция:
+#   1. Переименуйте этот файл в  CNAME  (без расширения)
+#   2. Впишите свой домен без https:// и без слеша в конце:
+#        chistulya.by
+#   3. Задеплойте на хостинг
+#   4. В панели хостинга добавьте этот домен и направьте DNS
+#      (Cloudflare: зарегистрируйте домен в Cloudflare и
+#       поставьте запись CNAME → <ваш-проект>.pages.dev)
+#
+#  Либо просто задеплойте на бесплатный поддомен:
+#   • Cloudflare Pages → chistulya.pages.dev (или chistulya-<ваше-имя>.pages.dev)
+#   • GitHub Pages   → <логин>.github.io/chistulya
+#   • Netlify        → chistulya.netlify.app
+#
+chistulya.example
